@@ -74,6 +74,6 @@ for mapname in maplist:
             survey_instrument = instrument
 
     survey_string = f"{survey_instrument}-{survey_name}-{band_name}"
-    known_surveys[survey_string] = MOCSurvey(survey_name='ukirt-uhs',
+    known_surveys[survey_string] = MOCSurvey(survey_name=survey_string,
                                              coverage_file=mapname
                                              )
