@@ -1,10 +1,11 @@
 import numpy as np
-import pandas as pd
 from mocpy import MOC
 import matplotlib.pyplot as plt
 from survey_coverage.utils import get_wcs
 from glob import glob
 from pathlib import Path
+from astropy.coordinates import SkyCoord
+import astropy.units as u
 
 
 class BaseSurvey:
@@ -14,10 +15,16 @@ class BaseSurvey:
         raise NotImplementedError
 
     def __init__(self,
-                 survey_name,
-                 coverage_file):
+                 survey_name: str,
+                 filter_name: str,
+                 coverage_file: str,
+                 lim_mag: float = None,
+                 **kwargs):
         self.survey_name = survey_name
         self.coverage_file = coverage_file
+        self.filter_name = filter_name
+        self.lim_mag = lim_mag
+        self.__dict__.update(kwargs)
 
     def plot_coverage(self):
         raise NotImplementedError
@@ -32,14 +39,7 @@ class MOCSurvey(BaseSurvey):
 
     coverage_type = "moc"
 
-    def __init__(self,
-                 *args,
-                 **kwargs):
-        super(MOCSurvey, self).__init__(*args, **kwargs)
-        self.moc = MOC.from_fits(self.coverage_file)
-
     def plot_coverage(self,
-                      band=None,
                       ax=None,
                       wcs=None,
                       border=True,
@@ -48,23 +48,66 @@ class MOCSurvey(BaseSurvey):
             wcs = get_wcs()
 
         if ax is None:
-            fig = plt.figure(figsize=(15, 7))
+            plt.figure(figsize=(15, 7))
             ax = plt.subplot(projection=wcs)
 
-        self.moc.fill(ax=ax,
-                      wcs=wcs,
-                      **kw_mpl)
+        moc = MOC.from_fits(self.coverage_file)
+        moc.fill(ax=ax,
+                 wcs=wcs,
+                 **kw_mpl)
 
         if border:
-            self.moc.border(ax=ax, wcs=wcs, alpha=0.7, color="black")
+            moc.border(ax=ax, wcs=wcs, alpha=0.7, color="black")
         return ax
 
+    def contains(self, ra_deg: int | float | list[float],
+                 dec_deg: int | float | list[float]) -> np.array(list[bool]):
+        if not isinstance(ra_deg, list):
+            ra_deg = [ra_deg]
+        if not isinstance(dec_deg, list):
+            dec_deg = [dec_deg]
 
-known_surveys = {}
+        coord = SkyCoord(ra=ra_deg, dec=dec_deg, unit=(u.deg, u.deg))
+        moc = MOC.from_fits(self.coverage_file)
+        return moc.contains_skycoords(coord)
+
+
+known_surveys = []
 datadir = Path(__file__).parent.joinpath("data")
 maplist = np.sort(glob(f'{datadir.as_posix()}/*-DR*.fits'))
-survey_instrument_mapping = {'UKIRT': ['dxs', 'gcs', 'gps', 'las', 'uds', 'uhs'],
-                             'VISTA': ['vhs', 'video', 'viking', 'vmc', 'vvv']}
+survey_instrument_mapping = {
+    'UKIRT': ['dxs', 'gcs', 'gps', 'gps2', 'las', 'las2', 'uds', 'uhs'],
+    'VISTA': ['vhs', 'video', 'viking', 'vmc', 'vvv']}
+
+survey_lim_mags = {
+    'UKIRT-las': {'Y': 20.834, 'J': 20.51, 'H': 20.19},
+    'UKIRT-las2': {'J': 20.51},
+    'UKIRT-dxs': {'J': 22.41, 'H': 23.19},
+    'UKIRT-gcs': {'Y': 20.734, 'J': 20.51, 'H': 20.19},
+    'UKIRT-gps': {'J': 20.71, 'H': 20.39},
+    'UKIRT-gps2': {'H': 20.39},
+    'UKIRT-uds': {'J': 25.21, 'H': 24.69},
+    'UKIRT-uhs': {'J': 20.51},
+    'VISTA-viking': {'Y': 22.3, 'J': 22.1, 'H': 21.5},
+    'VISTA-vhs': {'Y': 21.2, 'J': 21.2, 'H': 20.6},
+    'VISTA-vvv': {'Y': 21.2, 'J': 20.2, 'H': 18.2},
+    'VISTA-vmc': {'Y': 21.9, 'J': 21.4},
+    'VISTA-video': {'Y': 24.6, 'J': 24.5, 'H': 24.0}
+}
+
+survey_database_names = {}
+for survey in survey_instrument_mapping['UKIRT']:
+    if survey == 'uhs':
+        survey_database_names[f'UKIRT-{survey}'] = 'UHSDR1'
+    else:
+        survey_database_names[f'UKIRT-{survey}'] = 'UKIDSSDR11PLUS'
+
+survey_database_names['VISTA-viking'] = 'VIKINGDR5'
+survey_database_names['VISTA-vhs'] = 'VHSDR6'
+survey_database_names['VISTA-vvv'] = 'VVVDR5'
+survey_database_names['VISTA-vmc'] = 'VMCDR6'
+survey_database_names['VISTA-video'] = 'VIDEODR6'
+
 for mapname in maplist:
     survey_name = mapname.split('/')[-1].split('-')[0]
     band_name = mapname.split('/')[-1].split('-')[1]
@@ -73,7 +116,14 @@ for mapname in maplist:
         if survey_name in survey_instrument_mapping[instrument]:
             survey_instrument = instrument
 
-    survey_string = f"{survey_instrument}-{survey_name}-{band_name}"
-    known_surveys[survey_string] = MOCSurvey(survey_name=survey_string,
-                                             coverage_file=mapname
-                                             )
+    survey_string = f"{survey_instrument}-{survey_name}"
+    full_survey_string = f"{survey_instrument}-{survey_name}-{band_name}"
+    known_surveys.append(MOCSurvey(survey_name=full_survey_string,
+                                   filter_name=band_name,
+                                   coverage_file=mapname,
+                                   lim_mag=survey_lim_mags[survey_string][band_name],
+                                   wfau_dbname=survey_database_names[survey_string]
+                                   ))
+
+known_ukirt_surveys = [x for x in known_surveys if 'UKIRT' in x.survey_name]
+known_vista_surveys = [x for x in known_surveys if 'VISTA' in x.survey_name]
