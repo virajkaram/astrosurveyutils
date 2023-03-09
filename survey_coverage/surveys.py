@@ -51,7 +51,7 @@ class MOCSurvey(BaseSurvey):
             plt.figure(figsize=(15, 7))
             ax = plt.subplot(projection=wcs)
 
-        moc = self.get_moc()
+        moc = self.get_moc_data()
         moc.fill(ax=ax,
                  wcs=wcs,
                  **kw_mpl)
@@ -60,7 +60,7 @@ class MOCSurvey(BaseSurvey):
             moc.border(ax=ax, wcs=wcs, alpha=0.7, color="black")
         return ax
 
-    def get_moc(self):
+    def get_moc_data(self):
         moc = MOC.from_fits(self.coverage_file)
         return moc
 
@@ -72,7 +72,7 @@ class MOCSurvey(BaseSurvey):
             dec_deg = [dec_deg]
 
         coord = SkyCoord(ra=ra_deg, dec=dec_deg, unit=(u.deg, u.deg))
-        moc = self.get_moc()
+        moc = self.get_moc_data()
         return moc.contains_skycoords(coord)
 
 
