@@ -60,6 +60,36 @@ class MOCSurvey(BaseSurvey):
             moc.border(ax=ax, wcs=wcs, alpha=0.7, color="black")
         return ax
 
+    def add_ra_labels(self,
+                      ax,
+                      wcs,
+                      ralabel_dec=-20,
+                      ralabel_vals: list = [0, 60, 120, 180, 240, 300],
+                      ralabel_labels: list = ['0h', '4h', '8h', '12h', '16h', '20h']
+                      ):
+        ra_xlabel, ra_ylabel = wcs.all_world2pix(ralabel_vals,
+                                                 [ralabel_dec] * len(ralabel_vals), 0)
+
+        for xcrd, ycrd, ra_label in zip(ra_xlabel, ra_ylabel, ralabel_labels):
+            ax.text(xcrd, ycrd, ra_label, size=14)
+
+        return ax
+
+    def add_dec_labels(self,
+                       ax,
+                       wcs,
+                       declabel_ra=180,
+                       declabel_vals: list = [-60, 60],
+                       declabel_labels: list = [r'-60$^{o}$', r'60$^{o}$']
+                       ):
+        dec_xlabel, dec_ylabel = wcs.all_world2pix([declabel_ra] * len(declabel_vals),
+                                                   declabel_vals, 0)
+
+        for xcrd, ycrd, label in zip(dec_xlabel, dec_ylabel, declabel_labels):
+            ax.text(xcrd, ycrd, label, size=14)
+
+        return ax
+
     def get_moc_data(self):
         moc = MOC.from_fits(self.coverage_file)
         return moc
