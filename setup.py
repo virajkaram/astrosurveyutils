@@ -34,7 +34,5 @@ setuptools.setup(
         "matplotlib",
         "mocpy==0.12.0",
         "pandas"
-    ],
-    package_data={
-    }
+    ]
 )
