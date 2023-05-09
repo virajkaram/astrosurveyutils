@@ -13,6 +13,9 @@ setuptools.setup(
     url="https://github.com/virajkaram/survey_coverage",
     keywords="astronomy surveys coverage",
     packages=setuptools.find_packages(),
+    package_data={
+        'survey_coverage': ['data/*']
+    },
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
