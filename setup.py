@@ -4,17 +4,17 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="survey_coverage",
-    version="0.0.0",
+    name="surveyutils",
+    version="0.0.1",
     author="Viraj Karambelkar",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="MIT",
-    url="https://github.com/virajkaram/survey_coverage",
+    url="https://github.com/virajkaram/surveyutils",
     keywords="astronomy surveys coverage",
     packages=setuptools.find_packages(),
     package_data={
-        'survey_coverage': ['data/*']
+        'surveyutils': ['data/*']
     },
     classifiers=[
         "License :: OSI Approved :: MIT License",

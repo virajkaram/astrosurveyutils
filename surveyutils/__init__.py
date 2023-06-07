@@ -1,4 +1,4 @@
-from survey_coverage.surveys import known_surveys, known_ukirt_surveys, \
+from surveyutils.surveys import known_surveys, known_ukirt_surveys, \
     known_vista_surveys
 
 
