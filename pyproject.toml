@@ -35,7 +35,7 @@ dependencies = [
 "Bug Tracker" = "https://github.com/virajkaram/astrosurveyutils/issues"
 
 [tool.setuptools]
-packages = ["surveyutils"]
+packages = ["astrosurveyutils"]
 include-package-data = true
 
 [tool.setuptools.package-data]
